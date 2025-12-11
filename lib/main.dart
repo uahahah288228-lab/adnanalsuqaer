@@ -1,76 +1,86 @@
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 void main() {
-  runApp(const MyApp());
+  runApp(SettingsPage());
+}
+class SettingsPage extends StatefulWidget {
+  @override
+  _SettingsPageState createState() => _SettingsPageState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class _SettingsPageState extends State<SettingsPage> {
+  TextEditingController _usernameController = TextEditingController();
+  bool _darkModeEnabled = false;
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SebhaApp(),  
-    );
+  void initState() {
+    super.initState();
+    _loadSettings();
   }
-}
 
-class SebhaApp extends StatefulWidget {
-  const SebhaApp({super.key});
-
-  @override
-  State<SebhaApp> createState() => _SebhaAppState();
-}
-
-class _SebhaAppState extends State<SebhaApp> {
-  String text = "";
-  int count = 0;
-
-  void onPress(String t) {
+  // Method to load saved settings
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      text = t;
-      count++;
+      _usernameController.text = prefs.getString('username') ?? '';
+      _darkModeEnabled = prefs.getBool('darkMode') ?? false;
     });
   }
 
+  // Method to save settings
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('username', _usernameController.text);
+    await prefs.setBool('darkMode', _darkModeEnabled);
+    print('Settings saved');
+  }
+
+  // Method to Delete settings
+  Future<void> _clearSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('username'); // Remove username
+    await prefs.remove('darkMode'); // Remove dark mode preference
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("  مسبحة الكترونيه" ),backgroundColor: Colors.red,centerTitle: true,),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            text,
-            style: const TextStyle(fontSize: 24),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "$count",
-            style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: Text('Settings')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
             children: [
-              ElevatedButton(
-                onPressed: () => onPress("سبحان الله"),
-                child: const Text("سبحان الله"),
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(labelText: 'Username'),
               ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () => onPress("الحمدلله"),
-                child: const Text("الحمدلله"),
+              SwitchListTile(
+                title: Text('Dark Mode'),
+                value: _darkModeEnabled,
+                onChanged: (bool value) {
+                  setState(() {
+                    _darkModeEnabled = value;
+                  });
+                },
               ),
-              const SizedBox(width: 10),
-              ElevatedButton(
-                onPressed: () => onPress("الله اكبر"),
-                child: const Text("الله اكبر"),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _saveSettings,
+                    child: Text('Save Settings'),
+                  ),
+                  SizedBox(width: 20,),
+                  ElevatedButton(
+                    onPressed: _clearSettings,
+                    child: Text('clear setting'),
+                  ),
+                ],
               ),
+
             ],
           ),
-        ],
+        ),
       ),
     );
   }
